@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Developer Community @ Equinor — Pecha Kucha</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0a0a0a;
+    color: #f0f0f0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ── Timer bar ── */
+  #timer-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 5px;
+    background: #FF1243;
+    width: 100%;
+    transform-origin: left;
+    z-index: 100;
+    transition: none;
+  }
+
+  /* ── Slide counter ── */
+  #counter {
+    position: fixed;
+    bottom: 18px; right: 24px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 2px;
+    z-index: 100;
+  }
+
+  /* ── Controls ── */
+  #controls {
+    position: fixed;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 12px;
+    z-index: 100;
+  }
+  #controls button {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+  }
+  #controls button:hover { background: rgba(255,18,67,0.35); }
+
+  /* ── Slides container ── */
+  #slides {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* ── Individual slide ── */
+  .slide {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 80px;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    animation: fadeIn 0.4s ease;
+  }
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Slide themes ── */
+  .slide.theme-dark   { background: #0d0d0d; }
+  .slide.theme-red    { background: linear-gradient(135deg, #1a0008 0%, #3d0015 100%); }
+  .slide.theme-deep   { background: linear-gradient(135deg, #050520 0%, #0a0a3a 100%); }
+  .slide.theme-mid    { background: linear-gradient(135deg, #0d1a0d 0%, #0a2a0a 100%); }
+  .slide.theme-warm   { background: linear-gradient(135deg, #1a1000 0%, #2a1a00 100%); }
+
+  /* ── Typography ── */
+  .slide-number {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #FF1243;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0.8;
+  }
+
+  .slide h1 {
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+  }
+
+  .slide h2 {
+    font-size: clamp(24px, 3.5vw, 48px);
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .slide p {
+    font-size: clamp(16px, 2vw, 26px);
+    line-height: 1.6;
+    color: rgba(255,255,255,0.75);
+    max-width: 800px;
+  }
+
+  .accent { color: #FF1243; }
+  .muted  { color: rgba(255,255,255,0.4); font-size: 0.75em; }
+
+  /* ── Big stat ── */
+  .big-stat {
+    font-size: clamp(60px, 10vw, 120px);
+    font-weight: 800;
+    color: #FF1243;
+    line-height: 1;
+    margin: 10px 0;
+  }
+  .stat-label {
+    font-size: clamp(14px, 1.8vw, 22px);
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── Grid layout ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    width: 100%;
+    max-width: 900px;
+    margin-top: 20px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 900px;
+    margin-top: 20px;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 24px 20px;
+  }
+  .card .card-icon { font-size: 32px; margin-bottom: 10px; }
+  .card .card-title {
+    font-size: clamp(14px, 1.6vw, 20px);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .card .card-body {
+    font-size: clamp(12px, 1.2vw, 15px);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ── Placeholder highlight ── */
+  .placeholder {
+    display: inline-block;
+    background: rgba(255,18,67,0.18);
+    border: 1px dashed rgba(255,18,67,0.5);
+    border-radius: 6px;
+    padding: 2px 10px;
+    color: #FF8099;
+    font-style: italic;
+  }
+
+  /* ── Tag list ── */
+  .tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+  .tag {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: clamp(12px, 1.3vw, 16px);
+  }
+
+  /* ── Timeline ── */
+  .timeline { display: flex; flex-direction: column; gap: 14px; max-width: 700px; width: 100%; margin-top: 16px; text-align: left; }
+  .tl-item { display: flex; gap: 16px; align-items: flex-start; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; background: #FF1243; flex-shrink: 0; margin-top: 7px; }
+  .tl-content .tl-title { font-size: clamp(14px, 1.5vw, 18px); font-weight: 600; }
+  .tl-content .tl-desc  { font-size: clamp(11px, 1.1vw, 14px); color: rgba(255,255,255,0.45); }
+
+  /* ── Logo mark ── */
+  .logo-mark {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #FF1243;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800;
+    color: #fff;
+    margin: 0 auto 24px;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    width: 60px; height: 3px;
+    background: #FF1243;
+    border-radius: 2px;
+    margin: 18px auto;
+  }
+
+  /* ── Quote ── */
+  .quote {
+    font-size: clamp(20px, 2.8vw, 38px);
+    font-style: italic;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.85);
+    max-width: 780px;
+    position: relative;
+  }
+  .quote::before {
+    content: '"';
+    font-size: 6em;
+    color: rgba(255,18,67,0.15);
+    position: absolute;
+    top: -30px; left: -20px;
+    line-height: 1;
+  }
+
+  /* ── Countdown overlay ── */
+  #countdown-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  #countdown-overlay.show { display: flex; }
+  #countdown-number { font-size: 120px; font-weight: 800; color: #FF1243; line-height: 1; }
+  #countdown-text   { font-size: 22px; color: rgba(255,255,255,0.6); letter-spacing: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Timer bar -->
+<div id="timer-bar"></div>
+
+<!-- Slide counter -->
+<div id="counter">1 / 20</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button onclick="prevSlide()">&#8592; PREV</button>
+  <button id="play-btn" onclick="toggleAuto()">&#9646;&#9646; PAUSE</button>
+  <button onclick="nextSlide()">NEXT &#8594;</button>
+  <button onclick="startCountdown()">&#9654; RESTART</button>
+</div>
+
+<!-- Countdown overlay -->
+<div id="countdown-overlay">
+  <div id="countdown-number">3</div>
+  <div id="countdown-text">GET READY</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDES — edit placeholder text as needed
+     ══════════════════════════════════════════════ -->
+<div id="slides">
+
+  <!-- 1. TITLE -->
+  <div class="slide theme-red active">
+    <div class="logo-mark">EQ</div>
+    <h1>Developer Community<br><span class="accent">@ Equinor</span></h1>
+    <div class="divider"></div>
+    <p>Who we are, what we do, and where we're headed</p>
+    <p class="muted" style="margin-top:32px">Pecha Kucha &mdash; 20 slides &times; 20 seconds</p>
+  </div>
+
+  <!-- 2. WHO WE ARE -->
+  <div class="slide theme-dark">
+    <div class="slide-number">01 &mdash; WHO WE ARE</div>
+    <h2>A community <span class="accent">built by developers,<br>for developers</span></h2>
+    <div class="divider"></div>
+    <p>We are a digital community inside Equinor dedicated to connecting people involved in software development, sharing knowledge, and levelling up our craft &mdash; together.</p>
+  </div>
+
+  <!-- 3. OUR MISSION -->
+  <div class="slide theme-deep">
+    <div class="slide-number">02 &mdash; MISSION</div>
+    <div class="quote">Increase collaboration.<br>Share knowledge.<br>Build better software.<br>Strengthen the feeling of belonging.<br>Learn together.</div>
+  </div>
+
+  <!-- 4. COMMUNITY IN NUMBERS -->
+  <div class="slide theme-dark">
+    <div class="slide-number">03 &mdash; BY THE NUMBERS</div>
+    <div class="big-stat">650</div>
+    <div class="stat-label">Members across Equinor</div>
+    <div class="divider"></div>
+    <p>Spanning 4 locations and 1 business area</p>
+  </div>
+
+  <!-- 5. HOW IT STARTED -->
+  <div class="slide theme-warm">
+    <div class="slide-number">04 &mdash; ORIGIN STORY</div>
+    <h2>It started with a <span class="accent">Slack message</span></h2>
+    <div class="divider"></div>
+    <p>In 2024, the digital community in Bergen needed a place for developers to connect beyond their teams.</p>
+  </div>
+
+  <!-- 6. 2025 IN NUMBERS -->
+  <div class="slide theme-dark">
+    <div class="slide-number">05 &mdash; KNOWVEMBER</div>
+    <h2><span class="accent">Knowvember</span></h2>
+    <div class="divider"></div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-icon">&#128218;</div>
+        <div class="card-title">20 Tutorials</div>
+        <div class="card-body">Daily events in November</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128101;</div>
+        <div class="card-title">500 Participants</div>
+        <div class="card-body">Total across all events</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#127775;</div>
+        <div class="card-title">21 Presenters</div>
+        <div class="card-body">From inside Equinor</div>
+      </div>
+    </div>
+    <div class="tags" style="margin-top:20px;">
+      <span class="tag">Stavanger</span>
+      <span class="tag">Trondheim</span>
+      <span class="tag">Bergen</span>
+      <span class="tag">Oslo</span>
+    </div>
+  </div>
+
+  <!-- 7. MEETUPS & TALKS -->
+  <div class="slide theme-deep">
+    <div class="slide-number">06 &mdash; SPARK SESSIONS</div>
+    <h2>Developer Community <span class="accent">Meet-ups</span></h2>
+    <div class="divider"></div>
+    <p>In-person on Wednesdays &mdash; 13:00 to 14:00</p>
+    <div class="grid-3" style="max-width:800px; margin-top:20px;">
+      <div class="card">
+        <div class="card-icon">&#128203;</div>
+        <div class="card-title">Agenda</div>
+        <div class="card-body">Introduction &rarr; Presentation &rarr; Q&amp;A</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#9201;</div>
+        <div class="card-title">Duration</div>
+        <div class="card-body">Presentations run 30&ndash;45 min</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128292;</div>
+        <div class="card-title">Invitations</div>
+        <div class="card-body">Posted on Viva Engage &amp; Slack</div>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">OpenStreetMap</span>
+      <span class="tag">Radix</span>
+      <span class="tag">Equinor Wiki</span>
+      <span class="tag">Football meets data science</span>
+      <span class="tag">Headcount in the digital enterprise</span>
+    </div>
+  </div>
+
+  <!-- 8. PYTHON LEARNING LAB -->
+  <div class="slide theme-dark">
+    <div class="slide-number">07 &mdash; PYTHON LEARNING LAB</div>
+    <h2>Weekly <span class="accent">Python Meet-ups</span></h2>
+    <div class="divider"></div>
+    <div class="grid-3" style="max-width:800px; margin-top:20px;">
+      <div class="card">
+        <div class="card-icon">&#128013;</div>
+        <div class="card-title">Practice &amp; Learn</div>
+        <div class="card-body">Learn Python with instructors in a hands-on setting</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128101;</div>
+        <div class="card-title">Collaborate</div>
+        <div class="card-body">Bring your own project, collaborate and share your knowledge</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#127775;</div>
+        <div class="card-title">All Levels Welcome</div>
+        <div class="card-body">Whether you're a beginner or experienced &mdash; join us!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. SPARK FORMAT -->
+  <div class="slide theme-red">
+    <div class="slide-number">08 &mdash; BUILDING THINGS THAT MATTER</div>
+    <h2>Building things that <span class="accent">matter</span></h2>
+    <div class="divider"></div>
+    <div class="grid-2" style="max-width:700px;">
+      <div class="card">
+        <div class="card-icon">&#127875;</div>
+        <div class="card-title">Hacktoberfest</div>
+        <div class="card-body">Open source contributions in October</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#127876;</div>
+        <div class="card-title">Advent of Code</div>
+        <div class="card-body">Daily coding challenges in December</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. CHANNELS & TOOLS -->
+  <div class="slide theme-dark">
+    <div class="slide-number">09 &mdash; WHERE WE HANG OUT</div>
+    <div class="grid-3" style="max-width:900px">
+      <div class="card">
+        <div class="card-icon">&#128172;</div>
+        <div class="card-title">Slack</div>
+        <div class="card-body">#developer-community-bergen</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128196;</div>
+        <div class="card-title">SharePoint</div>
+        <div class="card-body">TDI Enterprise Digital &mdash; open</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128249;</div>
+        <div class="card-title">Recordings</div>
+        <div class="card-body">Shared on Degreed &amp; SharePoint</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128202;</div>
+        <div class="card-title">Newsletter</div>
+        <div class="card-body">Developer Community</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128483;</div>
+        <div class="card-title">Viva Engage</div>
+        <div class="card-body">Digital at Equinor</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. HIGHLIGHT 1 -->
+  <div class="slide theme-warm">
+    <div class="slide-number">10 &mdash; HIGHLIGHT OF THE YEAR</div>
+    <h2><span class="accent">Women in IT &amp; Software Engineering</span></h2>
+    <div class="divider"></div>
+    <p>Lightning talks with four presenters followed by a panel discussion on <strong>25 March</strong> &mdash; on the occasion of International Women's Day</p>
+  </div>
+
+  <!-- 12. HIGHLIGHT 2 -->
+  <div class="slide theme-deep">
+    <div class="slide-number">11 &mdash; ANOTHER HIGHLIGHT</div>
+    <h2><span class="accent">Building a Strong Developer Community in Equinor</span></h2>
+    <div class="divider"></div>
+    <p>On <strong>9 September</strong> we celebrated the one-year anniversary of Spark Sessions in Bergen &mdash; <strong>30 sessions</strong> and counting!</p>
+  </div>
+
+  <!-- 13. GROWTH -->
+  <div class="slide theme-dark">
+    <div class="slide-number">12 &mdash; GROWTH</div>
+    <h2>We're <span class="accent">growing</span></h2>
+    <div class="divider"></div>
+    <div class="grid-2" style="max-width:700px; margin-top:16px;">
+      <div class="card">
+        <div class="card-icon">&#127760;</div>
+        <div class="card-title">Cross business areas</div>
+        <div class="card-body">Including members from other business areas</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128249;</div>
+        <div class="card-title">Shared via Teams</div>
+        <div class="card-body">Increased number of events shared across locations</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14. WHAT WE LEARNED -->
+  <div class="slide theme-warm">
+    <div class="slide-number">13 &mdash; LESSONS LEARNED</div>
+    <h2>What <span class="accent">2025 taught us</span></h2>
+    <div class="divider"></div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Consistency</div>
+          <div class="tl-desc">Keep a consistent format and agenda</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Regularity</div>
+          <div class="tl-desc">Hold events on a regular schedule</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Encourage presenters</div>
+          <div class="tl-desc">Support and motivate presenters in local communities</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15. CHALLENGES -->
+  <div class="slide theme-dark">
+    <div class="slide-number">14 &mdash; CHALLENGES</div>
+    <h2>It wasn't always <span class="accent">easy</span></h2>
+    <div class="divider"></div>
+    <div class="grid-2" style="max-width:800px; margin-top:16px;">
+      <div class="card">
+        <div class="card-icon">&#128172;</div>
+        <div class="card-title">Multiple channels</div>
+        <div class="card-body">Communicating across Slack and Viva Engage</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128197;</div>
+        <div class="card-title">Logistics</div>
+        <div class="card-body">Meeting invitations in Outlook &amp; booking rooms</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128260;</div>
+        <div class="card-title">Last minute changes</div>
+        <div class="card-body">Schedule shifts requiring quick coordination</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128679;</div>
+        <div class="card-title">Renovations</div>
+        <div class="card-body">Amfi Digital Lab in Bergen under construction</div>
+      </div>
+    </div>
+    <p style="margin-top:16px; color:rgba(255,255,255,0.6);">Technical challenges when livestreaming events via Teams</p>
+  </div>
+
+  <!-- 16. IMPACT -->
+  <div class="slide theme-deep">
+    <div class="slide-number">15 &mdash; IMPACT</div>
+    <h2>What made you <span class="accent">happy?</span></h2>
+    <div class="divider"></div>
+    <div class="grid-2" style="max-width:800px; margin-top:16px;">
+      <div class="card">
+        <div class="card-body" style="font-size:clamp(14px,1.4vw,18px); font-style:italic; color:rgba(255,255,255,0.75);">"Lively discussions"</div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="font-size:clamp(14px,1.4vw,18px); font-style:italic; color:rgba(255,255,255,0.75);">"That people are willing to present"</div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="font-size:clamp(14px,1.4vw,18px); font-style:italic; color:rgba(255,255,255,0.75);">"Variety of topics and presenters"</div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="font-size:clamp(14px,1.4vw,18px); font-style:italic; color:rgba(255,255,255,0.75);">"Boller"</div>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-style:italic; color:rgba(255,255,255,0.6);">"As a new employee it was valuable to learn about this topic"</p>
+  </div>
+
+  <!-- 17. SHOUTOUTS -->
+  <div class="slide theme-red">
+    <div class="slide-number">16 &mdash; THANK YOU</div>
+    <h2>It takes a <span class="accent">community</span></h2>
+    <div class="divider"></div>
+    <p>Huge thanks to our organizers, speakers, and everyone who showed up.</p>
+    <div class="tags" style="margin-top:24px">
+      <span class="tag">Bergen</span>
+      <span class="tag">Stavanger</span>
+      <span class="tag">Oslo</span>
+      <span class="tag">Trondheim</span>
+    </div>
+  </div>
+
+  <!-- 18. WHAT'S NEXT -->
+  <div class="slide theme-dark">
+    <div class="slide-number">17 &mdash; WHAT'S NEXT</div>
+    <h2>2026 <span class="accent">Plans</span></h2>
+    <div class="divider"></div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-icon">&#127919;</div>
+        <div class="card-title">Developer Meet-ups</div>
+        <div class="card-body">Continuing Spark Sessions and Python Learning Lab</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128640;</div>
+        <div class="card-title">EDC</div>
+        <div class="card-body">Equinor Developer Conference</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128161;</div>
+        <div class="card-title">Knowvember Tutorials</div>
+        <div class="card-body">Daily tutorials returning in November</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 19. UPCOMING EVENTS -->
+  <div class="slide theme-warm">
+    <div class="slide-number">18 &mdash; MARK YOUR CALENDAR</div>
+    <h2>Coming up <span class="accent">soon</span></h2>
+    <p style="margin-bottom:8px;">Community events for software developers in Equinor</p>
+    <p style="font-size:clamp(12px,1.2vw,16px); color:rgba(255,255,255,0.45); margin-bottom:16px;">Equinor Developer Portal &mdash; Community Calendar</p>
+    <div class="divider"></div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">AI Enlightenment Session &mdash; 24 March</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Trondheim Developer Community &mdash; 25 March</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-title">Spark Session in Bergen &mdash; 25 March</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 20. JOIN US / CTA -->
+  <div class="slide theme-dark">
+    <div class="slide-number">19 &mdash; GET INVOLVED</div>
+    <h2>Join us &mdash; <span class="accent">we need you</span></h2>
+    <div class="divider"></div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-icon">&#128172;</div>
+        <div class="card-title">Join the Slack</div>
+        <div class="card-body">#developer-community-organizers</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#127908;</div>
+        <div class="card-title">Speak at a meetup</div>
+        <div class="card-body">Share your knowledge &amp; experience</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#9997;</div>
+        <div class="card-title">Help organize</div>
+        <div class="card-body">We always need more hands on deck</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 20. THANK YOU -->
+  <div class="slide theme-red">
+    <div class="logo-mark">EQ</div>
+    <h1>Thank you!</h1>
+    <div class="divider"></div>
+    <p>Developer Community @ Equinor</p>
+    <p style="margin-top:16px"><span class="placeholder">your.email@equinor.com</span></p>
+    <p style="margin-top:8px"><span class="placeholder">Slack: @yourname or #channel</span></p>
+    <p class="muted" style="margin-top:32px">Questions? Let's talk!</p>
+  </div>
+
+</div><!-- /slides -->
+
+<script>
+  const SLIDE_DURATION = 20000; // 20 seconds
+  const slides = document.querySelectorAll('.slide');
+  const timerBar = document.getElementById('timer-bar');
+  const counter  = document.getElementById('counter');
+  const playBtn  = document.getElementById('play-btn');
+
+  let current   = 0;
+  let isPlaying = true;
+  let startTime = null;
+  let animFrame = null;
+  let pausedAt  = 0; // ms elapsed when paused
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+  }
+
+  function nextSlide() {
+    if (current === slides.length - 1) {
+      stopAuto();
+      playBtn.textContent = '▶ REPLAY';
+      timerBar.style.width = '100%';
+      return;
+    }
+    showSlide(current + 1);
+    if (isPlaying) startTimer();
+  }
+
+  function prevSlide() {
+    showSlide(current - 1);
+    if (isPlaying) startTimer();
+    else { pausedAt = 0; timerBar.style.width = '100%'; }
+  }
+
+  function startTimer() {
+    cancelAnimationFrame(animFrame);
+    const elapsed = pausedAt;
+    startTime = performance.now() - elapsed;
+    pausedAt  = 0;
+
+    function tick(now) {
+      const pct = Math.min((now - startTime) / SLIDE_DURATION, 1);
+      timerBar.style.width = (100 - pct * 100) + '%';
+      if (pct < 1) {
+        animFrame = requestAnimationFrame(tick);
+      } else {
+        nextSlide();
+      }
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  function stopAuto() {
+    cancelAnimationFrame(animFrame);
+    isPlaying = false;
+    playBtn.textContent = '▶ PLAY';
+  }
+
+  function toggleAuto() {
+    if (isPlaying) {
+      // Pause: record how far through we are
+      const now = performance.now();
+      pausedAt  = Math.min(now - startTime, SLIDE_DURATION);
+      stopAuto();
+    } else {
+      isPlaying = true;
+      playBtn.textContent = '⏸ PAUSE';
+      startTimer();
+    }
+  }
+
+  // Countdown overlay
+  function startCountdown() {
+    stopAuto();
+    showSlide(0);
+    pausedAt = 0;
+    timerBar.style.width = '100%';
+
+    const overlay = document.getElementById('countdown-overlay');
+    const numEl   = document.getElementById('countdown-number');
+    overlay.classList.add('show');
+    let n = 3;
+    numEl.textContent = n;
+
+    const iv = setInterval(() => {
+      n--;
+      if (n <= 0) {
+        clearInterval(iv);
+        overlay.classList.remove('show');
+        isPlaying = true;
+        playBtn.textContent = '⏸ PAUSE';
+        startTimer();
+      } else {
+        numEl.textContent = n;
+      }
+    }, 1000);
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ')  { pausedAt = 0; nextSlide(); if (isPlaying) startTimer(); }
+    if (e.key === 'ArrowLeft')                     { prevSlide(); }
+    if (e.key === 'p' || e.key === 'P')            { toggleAuto(); }
+  });
+
+  // Start automatically
+  startTimer();
+</script>
+</body>
+</html>
